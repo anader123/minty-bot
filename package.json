@@ -1,20 +1,20 @@
 {
-  "name": "minty",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "abi-decoder": "^2.4.0",
-    "axios": "^0.27.2",
-    "dotenv": "^16.0.1",
-    "ethers": "^5.6.8",
-    "graphql": "^16.5.0",
-    "graphql-request": "^4.3.0",
-    "lodash": "^4.17.21"
-  }
+    "name": "minty-bot",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Nader",
+    "license": "GPL-3.0",
+    "dependencies": {
+        "abi-decoder": "^2.4.0",
+        "axios": "^0.27.2",
+        "dotenv": "^16.0.1",
+        "ethers": "^5.6.8",
+        "graphql": "^16.5.0",
+        "graphql-request": "^4.3.0",
+        "lodash": "^4.17.21"
+    }
 }

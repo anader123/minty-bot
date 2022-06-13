@@ -1,7 +1,7 @@
 require("dotenv").config();
 const { walletGen, getTokenBalance, mintNFT } = require("./utils/crypto");
 const { getMintData } = require("./utils/zora");
-const { getMintFunction, getGasPrice } = require("./utils/etherscan");
+const { getFullMintData, getGasPrice } = require("./utils/etherscan");
 
 const {
     ETH_PRIVATE_KEY,
@@ -59,12 +59,12 @@ const checkForMinting = async () => {
 
     const tokenBalance = await getTokenBalance(wallet, contractAddress);
 
-    if (+tokenBalance > 0) {
+    if (tokenBalance > 0) {
         console.log("Already minted token:", `Balance of ${tokenBalance}`);
         return;
     }
 
-    const fullMintData = await getMintFunction(wallet, mintData);
+    const fullMintData = await getFullMintData(wallet, mintData);
     const gasPrice = await getGasPrice();
 
     const { name, inputs, totalSupply, maxSupply } = fullMintData;

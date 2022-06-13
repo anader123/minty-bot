@@ -30,6 +30,10 @@ const tokenMintQuery = gql`
     }
 `;
 
+/**
+ * Gets the most recent 500 NFT mints on Ethereum
+ * @returns An array of mint objects
+ */
 const getInitialData = async () => {
     try {
         const result = await request(
@@ -43,6 +47,10 @@ const getInitialData = async () => {
     }
 };
 
+/**
+ * Gets the most minted NFT collection in the last 500 NFT mints
+ * @returns mintData on the most minted NFT collection
+ */
 const getMintData = async () => {
     const mints = await getInitialData();
     let mintArray = [];

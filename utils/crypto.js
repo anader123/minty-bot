@@ -1,13 +1,25 @@
 const { ethers } = require("ethers");
 const { BOT_ETH_ADDRESS } = process.env;
 
+/**
+ * Generates a wallet instance used for reading and writing from/to the blockchain
+ * @param privateKey An Ethereum private key
+ * @param rpc Connection to an Ethereum node
+ * @returns Wallet instance
+ */
 const walletGen = (privateKey, rpc) => {
     const provider = new ethers.providers.JsonRpcProvider(rpc);
     return new ethers.Wallet(privateKey, provider);
 };
 
+/**
+ * Gets the bot's balance of NFTs for a specific collection address
+ * @param wallet An instance used for reading and writing from/to the blockchain
+ * @param contractAddress Contract address for the NFT collection to check the balance of
+ * @returns Balance the bot has of an NFT collection
+ */
 const getTokenBalance = async (wallet, contractAddress) => {
-    const abi = [
+    const contractABI = [
         {
             inputs: [
                 { internalType: "address", name: "owner", type: "address" },
@@ -22,18 +34,24 @@ const getTokenBalance = async (wallet, contractAddress) => {
     try {
         const nftContract = await new ethers.Contract(
             contractAddress,
-            abi,
+            contractABI,
             wallet
         );
         const balance = await nftContract.balanceOf(BOT_ETH_ADDRESS);
-        return balance.toString();
+        return +balance;
     } catch (error) {
         console.log("getTokenBalance Error:", error);
         return 1;
     }
 };
 
-// maxSupply returns the max amount of NFTs that is possible to mint. Some contracts don't support maxSupply getters. Defaults to 10k if not available.
+/**
+ * Gets the maxSupply for an NFT collection. maxSupply returns the max amount of NFTs that is possible to mint. Some contracts don't support maxSupply, thus the bot defaults to 10k if not available.
+ * @param wallet An instance used for reading and writing from/to the blockchain
+ * @param contractAddress Contract address for the NFT collection to check maxSupply of
+ * @param contractABI ABI for the NFT contract
+ * @returns maxSupply of an NFT collection
+ */
 const getMaxSupply = async (wallet, contractAddress, contractABI) => {
     const maxSupplyMethod = contractABI.filter((method) => {
         if (method.name !== undefined) {
@@ -50,18 +68,22 @@ const getMaxSupply = async (wallet, contractAddress, contractABI) => {
         wallet
     );
 
-    let result;
     try {
         const response = await nftContract[maxSupplyMethod[0].name]();
         return +response;
     } catch (error) {
         console.log("Error getting Total Supply", error);
-        result = 10000;
+        return 10000;
     }
-    return result;
 };
 
-// totalSupply usually returns the current count during mints
+/**
+ * Gets the totalSupply for an NFT collection. totalSupply usually returns the current count during mints.
+ * @param wallet An instance used for reading and writing from/to the blockchain
+ * @param contractAddress Contract address for the NFT collection to check totalSupply of
+ * @param contractABI ABI for the NFT contract
+ * @returns totalSupply of an NFT collection
+ */
 const getTotalSupply = async (wallet, contractAddress, contractABI) => {
     const totalSupplyMethod = contractABI.filter((method) => {
         if (method.name !== undefined) {
@@ -72,8 +94,6 @@ const getTotalSupply = async (wallet, contractAddress, contractABI) => {
         }
     });
 
-    console.log({ totalSupplyMethod });
-
     if (totalSupplyMethod.length === 0) return 0;
 
     const nftContract = await new ethers.Contract(
@@ -82,17 +102,21 @@ const getTotalSupply = async (wallet, contractAddress, contractABI) => {
         wallet
     );
 
-    let result;
     try {
         const response = await nftContract[totalSupplyMethod[0].name]();
-        result = +response;
+        return +response;
     } catch (error) {
         console.log("Error getting Total Supply", error);
-        result = 0;
+        return 0;
     }
-    return result;
 };
 
+/**
+ * Attemps to mint an NFT depending on the arugments.
+ * @param wallet An instance used for reading and writing from/to the blockchain
+ * @param mintData An object of mint related data
+ * @returns An object that contains details about the submitted transaction
+ */
 const mintNFT = async (wallet, mintData) => {
     const { contractAddress, mintPrice, name } = mintData;
     let result;

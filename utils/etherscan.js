@@ -3,6 +3,11 @@ const { ETHERSCAN_API_KEY } = process.env;
 const abiDecoder = require("abi-decoder");
 const { getTotalSupply, getMaxSupply } = require("./crypto");
 
+/**
+ * Gets the ABI for an NFT contract
+ * @param contractAddress Contract address for the NFT collection
+ * @returns Contract ABI
+ */
 const getContractABI = async (contractAddress) => {
     let response;
     try {
@@ -26,31 +31,34 @@ const getContractABI = async (contractAddress) => {
     return contractABI;
 };
 
-const decodeMethod = async (abi, txHash) => {
-    let response;
-    abiDecoder.addABI(abi);
-
+/**
+ * Decodes the mint fuction for an NFT collection. This is required because the mint function is not always named mint.
+ * @param contractABI List of contract function signatures
+ * @param txHash An example mint transaction
+ * @returns Details about the contract's mint function
+ */
+const decodeMethod = async (contractABI, txHash) => {
     try {
+        abiDecoder.addABI(contractABI);
         const result = await axios.get(
             `https://api.etherscan.io/api?module=proxy&action=eth_getTransactionByHash&txhash=${txHash}&apikey=${ETHERSCAN_API_KEY}`
         );
         if (result.data.result.input === undefined) return { name: "mint" };
-        response = result;
+        const decodedMethod = abiDecoder.decodeMethod(result.data.result.input);
+        return decodedMethod;
     } catch (error) {
         console.log("fetchDecodeMethod Error: ", error);
         return { name: "mint" };
     }
-
-    const decodedMethod = abiDecoder.decodeMethod(response.data.result.input);
-
-    if (decodedMethod !== undefined) return decodedMethod;
-    else {
-        console.log("Error decoding data");
-        return undefined;
-    }
 };
 
-const getMintFunction = async (wallet, mintData) => {
+/**
+ * Gets additional context about the NFT contract the bot is trying to mint from
+ * @param wallet An instance used for reading and writing from/to the blockchain
+ * @param mintData An object of minting related data
+ * @returns Returns mintData with additional information
+ */
+const getFullMintData = async (wallet, mintData) => {
     const contractABI = await getContractABI(mintData.contractAddress);
     const decodedMethod = await decodeMethod(contractABI, mintData.txHash);
     const totalSupply = await getTotalSupply(
@@ -65,7 +73,7 @@ const getMintFunction = async (wallet, mintData) => {
     );
 
     const result = contractABI.filter((method) => {
-        if (method !== undefined) {
+        if (method !== undefined || method.name !== undefined) {
             return method.name === decodedMethod.name;
         } else if (method.inputs === undefined) return [{ name: undefined }];
     });
@@ -80,6 +88,10 @@ const getMintFunction = async (wallet, mintData) => {
     return mintInfo;
 };
 
+/**
+ * Gets current gas price on Ethereum
+ * @returns Returns average gas price
+ */
 const getGasPrice = async () => {
     try {
         const response = await axios.get(
@@ -92,4 +104,4 @@ const getGasPrice = async () => {
     }
 };
 
-module.exports = { getMintFunction, getGasPrice };
+module.exports = { getFullMintData, getGasPrice };

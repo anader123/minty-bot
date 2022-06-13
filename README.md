@@ -1,6 +1,6 @@
 # Minty Bot 🤖 🍃
 
-An automated minting bot for Ethereum ERC-721s.
+An automated minting bot for collecting Ethereum ERC-721s.
 
 ## Summary
 

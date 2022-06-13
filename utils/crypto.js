@@ -33,6 +33,66 @@ const getTokenBalance = async (wallet, contractAddress) => {
     }
 };
 
+// maxSupply returns the max amount of NFTs that is possible to mint. Some contracts don't support maxSupply getters. Defaults to 10k if not available.
+const getMaxSupply = async (wallet, contractAddress, contractABI) => {
+    const maxSupplyMethod = contractABI.filter((method) => {
+        if (method.name !== undefined) {
+            const methodName = method.name.toLowerCase();
+            return methodName.includes("max") && methodName.includes("supply");
+        }
+    });
+
+    if (maxSupplyMethod.length === 0) return 10000;
+
+    const nftContract = await new ethers.Contract(
+        contractAddress,
+        contractABI,
+        wallet
+    );
+
+    let result;
+    try {
+        const response = await nftContract[maxSupplyMethod[0].name]();
+        return +response;
+    } catch (error) {
+        console.log("Error getting Total Supply", error);
+        result = 10000;
+    }
+    return result;
+};
+
+// totalSupply usually returns the current count during mints
+const getTotalSupply = async (wallet, contractAddress, contractABI) => {
+    const totalSupplyMethod = contractABI.filter((method) => {
+        if (method.name !== undefined) {
+            const methodName = method.name.toLowerCase();
+            return (
+                methodName.includes("total") && methodName.includes("supply")
+            );
+        }
+    });
+
+    console.log({ totalSupplyMethod });
+
+    if (totalSupplyMethod.length === 0) return 0;
+
+    const nftContract = await new ethers.Contract(
+        contractAddress,
+        contractABI,
+        wallet
+    );
+
+    let result;
+    try {
+        const response = await nftContract[totalSupplyMethod[0].name]();
+        result = +response;
+    } catch (error) {
+        console.log("Error getting Total Supply", error);
+        result = 0;
+    }
+    return result;
+};
+
 const mintNFT = async (wallet, mintData) => {
     const { contractAddress, mintPrice, name } = mintData;
     let result;
@@ -110,4 +170,10 @@ const mintNFT = async (wallet, mintData) => {
     return { status, blockNumber, transactionHash };
 };
 
-module.exports = { walletGen, getTokenBalance, mintNFT };
+module.exports = {
+    walletGen,
+    getTokenBalance,
+    mintNFT,
+    getMaxSupply,
+    getTotalSupply,
+};

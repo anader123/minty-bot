@@ -1,6 +1,7 @@
 const axios = require("axios");
 const { ETHERSCAN_API_KEY } = process.env;
 const abiDecoder = require("abi-decoder");
+const { getTotalSupply, getMaxSupply } = require("./crypto");
 
 const getContractABI = async (contractAddress) => {
     let response;
@@ -36,18 +37,32 @@ const decodeMethod = async (abi, txHash) => {
         if (result.data.result.input === undefined) return { name: "mint" };
         response = result;
     } catch (error) {
-        console.log("decodeMethod Error: ", error);
+        console.log("fetchDecodeMethod Error: ", error);
         return { name: "mint" };
     }
 
     const decodedMethod = abiDecoder.decodeMethod(response.data.result.input);
-    console.log(decodedMethod);
-    return decodedMethod;
+
+    if (decodedMethod !== undefined) return decodedMethod;
+    else {
+        console.log("Error decoding data");
+        return undefined;
+    }
 };
 
-const getMintFunction = async (mintData) => {
+const getMintFunction = async (wallet, mintData) => {
     const contractABI = await getContractABI(mintData.contractAddress);
     const decodedMethod = await decodeMethod(contractABI, mintData.txHash);
+    const totalSupply = await getTotalSupply(
+        wallet,
+        mintData.contractAddress,
+        contractABI
+    );
+    const maxSupply = await getMaxSupply(
+        wallet,
+        mintData.contractAddress,
+        contractABI
+    );
 
     const result = contractABI.filter((method) => {
         if (method !== undefined) {
@@ -59,6 +74,9 @@ const getMintFunction = async (mintData) => {
     mintInfo.contractAddress = mintData.contractAddress;
     mintInfo.mintPrice = mintData.mintPrice;
     mintInfo.sampleCount = mintData.sampleCount;
+    mintInfo.totalSupply = totalSupply;
+    mintInfo.maxSupply = maxSupply;
+
     return mintInfo;
 };
 

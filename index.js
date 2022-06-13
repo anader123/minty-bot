@@ -10,17 +10,10 @@ const {
     MIN_SAMPLE_COUNT,
     MAX_GAS_PRICE,
     DELAY_SEC,
+    MIN_MINT_RATIO,
 } = process.env;
 
 const wallet = walletGen(ETH_PRIVATE_KEY, ETH_RPC);
-
-// TODO:
-// - Add file writing for logging
-// - Add ReadMe
-// - Might rename certain functions for better clarity
-// - Take into account max supply before deceiding to mint
-// - Add collection name filters ie has the word goblin or town
-// - Don't mint if under 50%
 
 const checkForMinting = async () => {
     const mintData = await getMintData();
@@ -34,6 +27,10 @@ const checkForMinting = async () => {
     } = mintData;
 
     console.table(mintData);
+
+    const nameCheckResult = ["goblin", "town", "ape", "poop"].filter((word) => {
+        return collectionName.toLowerCase().includes(word);
+    });
 
     switch (true) {
         case contractAddress === undefined:
@@ -54,6 +51,10 @@ const checkForMinting = async () => {
         case mintCurrency !== "0x0000000000000000000000000000000000000000":
             console.log("Mint currency was an ERC20", mintCurrency);
             return;
+
+        case nameCheckResult.length > 0:
+            console.log("Collection is a derivative:", collectionName);
+            return;
     }
 
     const tokenBalance = await getTokenBalance(wallet, contractAddress);
@@ -63,15 +64,24 @@ const checkForMinting = async () => {
         return;
     }
 
-    const fullMintData = await getMintFunction(mintData);
+    const fullMintData = await getMintFunction(wallet, mintData);
     const gasPrice = await getGasPrice();
 
+    const { name, inputs, totalSupply, maxSupply } = fullMintData;
     switch (true) {
-        case fullMintData.name === undefined:
+        case name === undefined:
             console.log("No contract ABI found");
             return;
 
-        case fullMintData.inputs.length > 2:
+        case totalSupply === 0:
+            console.log("Error getting Total Supply");
+            return;
+
+        case totalSupply / maxSupply < MIN_MINT_RATIO:
+            console.log("Not enough minted yet", `${totalSupply}/${maxSupply}`);
+            return;
+
+        case inputs.length > 2:
             console.log("Too many function arguments");
             return;
 

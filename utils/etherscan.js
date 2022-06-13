@@ -74,9 +74,7 @@ const getFullMintData = async (wallet, mintData) => {
 
     const result = contractABI.filter((method) => {
         const methodName = method.name;
-        console.log({ methodName });
         if (method.name !== undefined) {
-            console.log(method);
             return method.name === decodedMethod.name;
         }
     });
